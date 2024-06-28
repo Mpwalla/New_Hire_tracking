@@ -1,0 +1,43 @@
+WITH CTE AS (
+    SELECT DISTINCT
+        sc_request.number AS 'Requisition Number',
+        sc_request.approval AS 'Task Status',
+        sys_user.name AS 'New Hire Name',
+        sys1.name AS 'Hiring Manager',
+        CAST(sc_request.opened_at AS DATE) AS 'Open Date',
+        CAST(sc_request.u_new_staff_it_request_due_date AS DATE) AS 'Start Date',
+        CASE 
+            WHEN DATEDIFF(DAY, sc_request.opened_at, COALESCE(sc_request.closed_at, sc_request.u_new_staff_it_request_due_date)) <= 3 THEN 'Yes'
+            ELSE 'No'
+        END AS 'Start Date Met',
+        CAST(sc_request.closed_at AS DATE) AS 'Equipment on Desk Date',
+        CASE
+            WHEN sc_req_item.short_description IN ('Ultra Portable Laptop', 'VXi V150 Wireless Headset System', 'Rugged Laptop', 'Fullsize Laptop 15" Screen', 'Ultra Portable Laptop 13" Screen', 'Logitech Web Camera Request',
+                                                   'Standard Mouse/Keyboard Combo', 'Non-Rugged Laptop Docking Station', 'Computer Monitor', 'Standard Desktop', 'Wired Headset System for Information Center Users')
+                THEN 'Hardware'
+            ELSE 'Software'
+        END AS PendingItems,
+        CASE
+            WHEN sc_req_item.short_description IN ('Ultra Portable Laptop', 'VXi V150 Wireless Headset System', 'Rugged Laptop', 'Fullsize Laptop 15" Screen', 'Ultra Portable Laptop 13" Screen', 'Logitech Web Camera Request',
+                                                   'Standard Mouse/Keyboard Combo', 'Non-Rugged Laptop Docking Station', 'Computer Monitor', 'Standard Desktop', 'Wired Headset System for Information Center Users')
+                THEN sys2.name 
+            ELSE NULL
+        END AS 'Field Tech',
+		ROW_NUMBER() OVER (PARTITION BY sc_request.number ORDER BY CASE
+            WHEN sc_req_item.short_description IN ('Ultra Portable Laptop', 'VXi V150 Wireless Headset System', 'Rugged Laptop', 'Fullsize Laptop 15" Screen', 'Ultra Portable Laptop 13" Screen', 'Logitech Web Camera Request',
+                                                   'Standard Mouse/Keyboard Combo', 'Non-Rugged Laptop Docking Station', 'Computer Monitor', 'Standard Desktop', 'Wired Headset System for Information Center Users')
+                THEN 'Hardware'
+            ELSE 'Software' END) AS TempColumn
+    FROM XXXXXX
+    INNER JOIN sys_user ON sys_user.sys_id = sc_request.requested_for
+    INNER JOIN sys_user sys1 ON sys1.sys_id = sc_request.opened_by
+    INNER JOIN sc_req_item ON sc_req_item.request = sc_request.sys_id
+    INNER JOIN cmn_location ON cmn_location.sys_id = sc_req_item.location
+    INNER JOIN sys_user sys2 ON sys2.sys_id = cmn_location.u_assigned_tech
+    WHERE sc_request.short_description = 'New Staff IT Request' 
+      AND sc_request.opened_at LIKE '%2024%'
+)
+SELECT *
+FROM CTE
+WHERE TempColumn =1;
+
